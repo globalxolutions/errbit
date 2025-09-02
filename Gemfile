@@ -90,6 +90,7 @@ group :development, :test do
 end
 
 group :development do
+  gem "debug"
   gem "listen", "~> 3.5"
   gem "bundler-audit", require: false
 end
