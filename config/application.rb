@@ -23,7 +23,7 @@ Bundler.require(*Rails.groups)
 module Errbit
   class Application < Rails::Application
     # Initialize configuration defaults for originally generated Rails version.
-    config.load_defaults 8.0
+    config.load_defaults 8.1
 
     # Please, add to the `ignore` list any other `lib` subdirectories that do
     # not contain `.rb` files, or that should not be reloaded or eager loaded.
@@ -55,9 +55,9 @@ module Errbit
     # > rails generate - config
     config.generators do |g|
       g.orm :mongoid
-      g.template_engine :haml
+      g.template_engine :erb
       g.test_framework :rspec, fixture: false
-      g.fixture_replacement :fabrication
+      g.fixture_replacement :factory_bot
     end
 
     # IssueTracker subclasses use inheritance, so preloading models provides querying consistency in dev mode.
@@ -66,6 +66,9 @@ module Errbit
     # Configure Devise mailer to use our mailer layout.
     config.to_prepare { Devise::Mailer.layout "mailer" }
 
-    config.active_job.queue_adapter = :sucker_punch
+    config.active_job.queue_adapter = :async
+
+    # Compiles the ERB template with the frozen_string_literal true magic comment
+    config.action_view.frozen_string_literal = true
   end
 end

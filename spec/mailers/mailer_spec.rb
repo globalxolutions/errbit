@@ -26,7 +26,7 @@ RSpec.shared_examples "a notification email" do
 
   it "should send the email" do
     email
-    expect(ActionMailer::Base.deliveries.size).to eq 1
+    expect(ActionMailer::Base.deliveries.size).to eq(1)
   end
 end
 
@@ -36,7 +36,7 @@ RSpec.describe Mailer do
     include EmailSpec::Matchers
 
     let(:notice) do
-      n = Fabricate(:notice, message: "class < ActionController::Base")
+      n = create(:notice, message: "class < ActionController::Base")
       n.backtrace.lines.last[:file] = "[PROJECT_ROOT]/path/to/file.js"
       n
     end
@@ -56,7 +56,7 @@ RSpec.describe Mailer do
       p
     end
 
-    let!(:user) { Fabricate(:admin) }
+    let!(:user) { create(:user, admin: true) }
 
     let(:error_report) do
       instance_double(
@@ -68,12 +68,12 @@ RSpec.describe Mailer do
     end
 
     let(:email) do
-      Mailer.err_notification(error_report).deliver_now
+      Mailer.with(error_report: error_report).err_notification.deliver_now
     end
 
     before { email }
 
-    it_should_behave_like "a notification email"
+    it_behaves_like "a notification email"
 
     it "should html-escape the notice's message for the html part" do
       email_html_body = email.body.parts.detect { |p| p.content_type.match(/html/) }.body.raw_source
@@ -85,7 +85,7 @@ RSpec.describe Mailer do
     end
 
     it "should have links to source files" do
-      expect(email).to have_body_text('<a target="_blank" href="http://example.com/path/to/file.js">path/to/file.js')
+      expect(email).to have_body_text('<a target="_blank" rel="noopener noreferrer" href="http://example.com/path/to/file.js"> path/to/file.js')
     end
 
     it "should have the error count in the subject" do
@@ -93,7 +93,7 @@ RSpec.describe Mailer do
     end
 
     context "with a very long message" do
-      let(:notice) { Fabricate(:notice, message: 6.times.collect { |_a| "0123456789" }.join("")) }
+      let(:notice) { create(:notice, message: 6.times.collect { |_a| "0123456789" }.join("")) }
 
       it "should truncate the long message" do
         expect(email.subject).to match(/ \d{47}\.{3}$/)
@@ -105,22 +105,22 @@ RSpec.describe Mailer do
     include EmailSpec::Helpers
     include EmailSpec::Matchers
 
-    let!(:notice) { Fabricate(:notice) }
+    let!(:notice) { create(:notice) }
 
-    let!(:comment) { Fabricate(:comment, err: notice.problem) }
+    let!(:comment) { create(:comment, err: notice.problem) }
 
-    let!(:watcher) { Fabricate(:watcher, app: comment.app) }
+    let!(:watcher) { create(:watcher, app: comment.app) }
 
     let(:recipients) { ["recipient@example.com", "another@example.com"] }
 
     before do
       expect(comment).to receive(:notification_recipients).and_return(recipients)
-      Fabricate(:notice, err: notice.err)
-      @email = Mailer.comment_notification(comment).deliver_now
+      create(:notice, err: notice.err)
+      @email = Mailer.with(comment: comment).comment_notification.deliver_now
     end
 
     it "should be sent to comment notification recipients" do
-      expect(@email.to).to eq recipients
+      expect(@email.to).to eq(recipients)
     end
 
     it "should have the notices count in the body" do

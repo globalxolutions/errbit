@@ -3,7 +3,7 @@
 require "rails_helper"
 
 RSpec.describe "Notices management", type: :request do
-  let(:errbit_app) { Fabricate(:app, api_key: "APIKEY") }
+  let(:errbit_app) { create(:app, api_key: "APIKEY") }
 
   describe "create a new notice" do
     context "with valid notice" do
@@ -29,15 +29,15 @@ RSpec.describe "Notices management", type: :request do
     end
 
     context "with notice with bad api_key" do
-      let(:errbit_app) { Fabricate(:app) }
+      let(:errbit_app) { create(:app) }
 
       let(:xml) { Rails.root.join("spec/fixtures/hoptoad_test_notice.xml").read }
 
       it "not save a new notice and return 422" do
         expect do
           post "/notifier_api/v2/notices", params: {data: xml}
-          expect(response.status).to eq 422
-          expect(response.body).to eq "Your API key is unknown"
+          expect(response).to have_http_status(:unprocessable_content)
+          expect(response.body).to eq("Your API key is unknown")
         end.not_to change(errbit_app.problems, :count)
       end
     end

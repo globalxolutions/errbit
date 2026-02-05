@@ -103,7 +103,7 @@ class App
 
   # Legacy apps don't have notify_on_errs param
   def notify_on_errs
-    !(super == false)
+    super != false
   end
   alias_method :notify_on_errs?, :notify_on_errs
 
@@ -200,6 +200,13 @@ class App
     notice_fingerprinter.source == "site"
   end
 
+  def attributes_for_super_diff
+    {
+      id: id.to_s,
+      name: name
+    }
+  end
+
   private
 
   def store_cached_attributes_on_problems
@@ -225,7 +232,7 @@ class App
     return if github_repo.blank?
 
     github_host = URI.parse(Errbit::Config.github_url).host
-    github_host = ::Regexp.escape(github_host)
+    github_host = Regexp.escape(github_host)
 
     self.github_repo = github_repo.strip
     self.github_repo = github_repo.sub(%r{(git@|https?://)#{github_host}(/|:)}, "")

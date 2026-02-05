@@ -17,22 +17,27 @@ RSpec.describe App, type: :model do
 
   context "validations" do
     it "requires a name" do
-      app = Fabricate.build(:app, name: nil)
-      expect(app).not_to be_valid
+      app = build(:app, name: nil)
+
+      expect(app.valid?).to eq(false)
+
       expect(app.errors[:name]).to include("can't be blank")
     end
 
     it "requires unique names" do
-      Fabricate(:app, name: "Errbit")
-      app = Fabricate.build(:app, name: "Errbit")
-      expect(app).not_to be_valid
+      create(:app, name: "Errbit")
+
+      app = build(:app, name: "Errbit")
+
+      expect(app.valid?).to eq(false)
+
       expect(app.errors[:name]).to eq(["has already been taken"])
     end
 
     it "requires unique api_keys" do
-      Fabricate(:app, api_key: "APIKEY")
-      app = Fabricate.build(:app, api_key: "APIKEY")
-      expect(app).not_to be_valid
+      create(:app, api_key: "APIKEY")
+      app = build(:app, api_key: "APIKEY")
+      expect(app.valid?).to eq(false)
       expect(app.errors[:api_key]).to eq(["has already been taken"])
     end
   end
@@ -65,94 +70,113 @@ RSpec.describe App, type: :model do
 
   context "being created" do
     it "generates a new api-key" do
-      app = Fabricate.build(:app)
-      expect(app.api_key).to be_nil
+      app = build(:app)
+
+      expect(app.api_key).to eq(nil)
+
       app.save
-      expect(app.api_key).not_to be_nil
+
+      expect(app.api_key).not_to eq(nil)
     end
 
     it "generates a correct api-key" do
-      app = Fabricate(:app)
+      app = create(:app)
+
       expect(app.api_key).to match(/^[a-f0-9]{32}$/)
     end
 
     it "is fine with blank github repos" do
-      app = Fabricate.build(:app, github_repo: "")
+      app = build(:app, github_repo: "")
+
       app.save
-      expect(app.github_repo).to eq ""
+
+      expect(app.github_repo).to eq("")
     end
 
     it "doesnt touch github user/repo" do
-      app = Fabricate.build(:app, github_repo: "errbit/errbit")
+      app = build(:app, github_repo: "errbit/errbit")
+
       app.save
-      expect(app.github_repo).to eq "errbit/errbit"
+
+      expect(app.github_repo).to eq("errbit/errbit")
     end
 
     it "removes domain from https github repos" do
-      app = Fabricate.build(:app, github_repo: "https://github.com/errbit/errbit")
+      app = build(:app, github_repo: "https://github.com/errbit/errbit")
+
       app.save
-      expect(app.github_repo).to eq "errbit/errbit"
+
+      expect(app.github_repo).to eq("errbit/errbit")
     end
 
     it "normalizes public git repo as a github repo" do
-      app = Fabricate.build(:app, github_repo: "https://github.com/errbit/errbit.git")
+      app = build(:app, github_repo: "https://github.com/errbit/errbit.git")
+
       app.save
-      expect(app.github_repo).to eq "errbit/errbit"
+
+      expect(app.github_repo).to eq("errbit/errbit")
     end
 
     it "normalizes private git repo as a github repo" do
-      app = Fabricate.build(:app, github_repo: "git@github.com:errbit/errbit.git")
+      app = build(:app, github_repo: "git@github.com:errbit/errbit.git")
+
       app.save
-      expect(app.github_repo).to eq "errbit/errbit"
+
+      expect(app.github_repo).to eq("errbit/errbit")
     end
   end
 
   describe "#github_url_to_file" do
     it "resolves to full path to file" do
-      app = Fabricate(:app, github_repo: "errbit/errbit")
-      expect(app.github_url_to_file("path/to/file")).to eq "https://github.com/errbit/errbit/blob/main/path/to/file"
+      app = create(:app, github_repo: "errbit/errbit", repository_branch: "main")
+
+      expect(app.github_url_to_file("path/to/file")).to eq("https://github.com/errbit/errbit/blob/main/path/to/file")
     end
   end
 
   describe "#github_repo?" do
     it "is true when there is a github_repo" do
-      app = Fabricate(:app, github_repo: "errbit/errbit")
+      app = create(:app, github_repo: "errbit/errbit")
+
       expect(app.github_repo?).to eq(true)
     end
 
     it "is false when no github_repo" do
-      app = Fabricate(:app)
+      app = create(:app)
+
       expect(app.github_repo?).to eq(false)
     end
   end
 
   context "notification recipients" do
     it "should send notices to either all users plus watchers, or the configured watchers" do
-      @app = Fabricate(:app)
-      3.times { Fabricate(:user) }
-      5.times { Fabricate(:watcher, app: @app) }
-      @app.notify_all_users = true
-      expect(@app.notification_recipients.size).to eq 8
-      @app.notify_all_users = false
-      expect(@app.notification_recipients.size).to eq 5
+      app = create(:app)
+      create_list(:user, 3)
+      create_list(:watcher, 5, app: app)
+      app.notify_all_users = true
+      expect(app.notification_recipients.size).to eq(8)
+      app.notify_all_users = false
+      expect(app.notification_recipients.size).to eq(5)
     end
   end
 
   describe "#emailable?" do
     it "should be true if notify on errs and there are notification recipients" do
-      app = Fabricate(:app, notify_on_errs: true, notify_all_users: false)
-      2.times { Fabricate(:watcher, app: app) }
+      app = create(:app, notify_on_errs: true, notify_all_users: false)
+
+      create_list(:watcher, 2, app: app)
+
       expect(app.emailable?).to eq(true)
     end
 
     it "should be false if notify on errs is disabled" do
-      app = Fabricate(:app, notify_on_errs: false, notify_all_users: false)
-      2.times { Fabricate(:watcher, app: app) }
+      app = create(:app, notify_on_errs: false, notify_all_users: false)
+      create_list(:watcher, 2, app: app)
       expect(app.emailable?).to eq(false)
     end
 
     it "should be false if there are no notification recipients" do
-      app = Fabricate(:app, notify_on_errs: true, notify_all_users: false)
+      app = create(:app, notify_on_errs: true, notify_all_users: false)
       expect(app.watchers).to be_empty
       expect(app.emailable?).to eq(false)
     end
@@ -160,18 +184,18 @@ RSpec.describe App, type: :model do
 
   context "copying attributes from existing app" do
     it "should only copy the necessary fields" do
-      @app = Fabricate(:app, name: "app", github_repo: "url")
-      @copy_app = Fabricate(:app, name: "copy_app", github_repo: "copy url")
-      @copy_watcher = Fabricate(:watcher, email: "copywatcher@example.com", app: @copy_app)
-      @app.copy_attributes_from(@copy_app.id)
-      expect(@app.name).to eq "app"
-      expect(@app.github_repo).to eq "copy url"
-      expect(@app.watchers.first.email).to eq "copywatcher@example.com"
+      app = create(:app, name: "app", github_repo: "url")
+      copy_app = create(:app, name: "copy_app", github_repo: "copy url")
+      create(:watcher, email: "copywatcher@example.com", app: copy_app)
+      app.copy_attributes_from(copy_app.id)
+      expect(app.name).to eq("app")
+      expect(app.github_repo).to eq("copy url")
+      expect(app.watchers.first.email).to eq("copywatcher@example.com")
     end
   end
 
   describe "#find_or_create_err!" do
-    let(:app) { Fabricate(:app) }
+    let(:app) { create(:app) }
 
     let(:conditions) do
       {
@@ -182,21 +206,20 @@ RSpec.describe App, type: :model do
     end
 
     it "returns the correct err if one already exists" do
-      existing = Fabricate(
-        :err,
-        problem: Fabricate(:problem, app: app),
-        fingerprint: conditions[:fingerprint]
-      )
-      expect(Err.where(fingerprint: conditions[:fingerprint]).first).to eq existing
-      expect(app.find_or_create_err!(conditions)).to eq existing
+      problem = create(:problem, app: app)
+      existing = create(:err,
+        problem: problem,
+        fingerprint: conditions[:fingerprint])
+      expect(Err.where(fingerprint: conditions[:fingerprint]).first).to eq(existing)
+      expect(app.find_or_create_err!(conditions)).to eq(existing)
     end
 
     it "assigns the returned err to the given app" do
-      expect(app.find_or_create_err!(conditions).app).to eq app
+      expect(app.find_or_create_err!(conditions).app).to eq(app)
     end
 
     it "creates a new problem if a matching one does not already exist" do
-      expect(Err.where(conditions).first).to be_nil
+      expect(Err.where(conditions).first).to eq(nil)
       expect do
         app.find_or_create_err!(conditions)
       end.to change(Problem, :count).by(1)
@@ -211,7 +234,7 @@ RSpec.describe App, type: :model do
       end
 
       it "save the err" do
-        expect(Err.where(conditions).first).to be_nil
+        expect(Err.where(conditions).first).to eq(nil)
         expect do
           app.find_or_create_err!(conditions)
         end.to change(Problem, :count).by(1)
@@ -221,8 +244,8 @@ RSpec.describe App, type: :model do
 
   describe ".find_by_api_key!" do
     it "return the app with api_key" do
-      app = Fabricate(:app)
-      expect(App.find_by_api_key!(app.api_key)).to eq app
+      app = create(:app)
+      expect(App.find_by_api_key!(app.api_key)).to eq(app)
     end
 
     it "raise Mongoid::Errors::DocumentNotFound if not found" do
@@ -234,7 +257,8 @@ RSpec.describe App, type: :model do
 
   describe "#notice_fingerprinter" do
     it "app acquires a notice_fingerprinter when it doesn't have one" do
-      app = Fabricate(:app, name: "Errbit")
+      app = create(:app, name: "Errbit")
+
       app.notice_fingerprinter.delete
 
       # has a notice_fingerprinter because it's been accessed when blank
@@ -242,17 +266,25 @@ RSpec.describe App, type: :model do
     end
 
     it "brand new app has a notice_fingerprinter" do
-      app = Fabricate(:app, name: "Errbit")
+      app = create(:app, name: "Errbit")
+
       expect(app.notice_fingerprinter).to be_a(NoticeFingerprinter)
     end
   end
 
   context "searching" do
     it "finds the correct record" do
-      found = Fabricate(:app, name: "Foo")
-      not_found = Fabricate(:app, name: "Brr")
-      expect(App.search("Foo").to_a).to include(found)
-      expect(App.search("Foo").to_a).not_to include(not_found)
+      found = create(:app, name: "Foo")
+
+      create(:app, name: "Brr")
+
+      expect(App.search("Foo").to_a).to eq([found])
     end
+  end
+
+  describe "#attributes_for_super_diff" do
+    subject { create(:app) }
+
+    it { expect(subject.attributes_for_super_diff).to eq(id: subject.id.to_s, name: subject.name) }
   end
 end

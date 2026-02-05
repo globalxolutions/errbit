@@ -3,7 +3,8 @@
 require "rails_helper"
 
 RSpec.describe AirbrakeApi::V3::NoticeParser do
-  let(:app) { Fabricate(:app) }
+  let(:app) { create(:app) }
+
   let(:notifier_params) do
     {
       "name" => "notifiername",
@@ -55,7 +56,7 @@ RSpec.describe AirbrakeApi::V3::NoticeParser do
     params = build_params_for("api_v3_request.json", key: nil, project_id: app.api_key)
 
     report = described_class.new(params).report
-    expect(report).to be_valid
+    expect(report.valid?).to eq(true)
   end
 
   it "parses JSON payload with missing backtrace" do

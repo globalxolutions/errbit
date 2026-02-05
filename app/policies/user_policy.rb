@@ -8,7 +8,7 @@ class UserPolicy < ApplicationPolicy
 
   # @param user [User] The user making the request
   # @param record [User] The record being accessed
-  def initialize(user, record)
+  def initialize(user, record) # rubocop:disable Style/RedundantInitialize, Lint/UselessMethodDefinition
     super
   end
 
@@ -17,7 +17,7 @@ class UserPolicy < ApplicationPolicy
   end
 
   def show?
-    scope.where(id: record.id).exists?
+    scope.exists?(id: record.id)
   end
 
   def create?
@@ -29,15 +29,15 @@ class UserPolicy < ApplicationPolicy
   end
 
   def update?
-    scope.where(id: record.id).exists?
+    scope.exists?(id: record.id)
   end
 
   def edit?
-    scope.where(id: record.id).exists?
+    scope.exists?(id: record.id)
   end
 
   def destroy?
-    scope.where(id: record.id).exists? && user.id != record.id
+    scope.exists?(id: record.id) && user.id != record.id
   end
 
   def permitted_attributes
@@ -53,7 +53,7 @@ class UserPolicy < ApplicationPolicy
 
     # @param user [User]
     # @param scope [User, Object] The scope of records being accessed
-    def initialize(user, scope)
+    def initialize(user, scope) # rubocop:disable Style/RedundantInitialize, Lint/UselessMethodDefinition
       super
     end
 
