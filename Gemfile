@@ -3,8 +3,6 @@
 source "https://rubygems.org"
 
 ruby file: ".ruby-version"
-gem "rails", "8.0.2"
-
 gem "rails", "8.1.2"
 
 gem "reactionview"
@@ -90,6 +88,7 @@ end
 
 group :development do
   gem "listen", "~> 3.10"
+  gem "debug"
   gem "bundler-audit", require: false
 end
 

@@ -65,5 +65,10 @@ Rails.application.configure do
   config.file_watcher = ActiveSupport::EventedFileUpdateChecker
 
   # rails mail preview
-  config.action_mailer.preview_paths << "#{Rails.root}/spec/mailers/previews"
+  config.action_mailer.preview_paths <<  `Rails.root}/spec/mailers/previews`
+
+  # Known hosts
+  # config.hosts << "localhost:3000"
+  config.hosts << ".lvh.me"
+  config.hosts << /.*\.ngrok-free\.app/
 end
