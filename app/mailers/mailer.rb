@@ -4,7 +4,7 @@
 # This is only necessary when sending test emails (i.e. from rake hoptoad:test)
 require Rails.root.join("config/routes.rb")
 
-class Mailer < ActionMailer::Base
+class Mailer < ApplicationMailer
   helper ApplicationHelper
 
   default :from => Errbit::Config.email_from,
@@ -14,7 +14,9 @@ class Mailer < ActionMailer::Base
     "Precedence" => "bulk",
     "Auto-Submitted" => "auto-generated"
 
-  def err_notification(error_report)
+  def err_notification
+    error_report = params[:error_report]
+
     @notice = NoticeDecorator.new(error_report.notice)
     @app = AppDecorator.new(error_report.app)
 
@@ -29,11 +31,13 @@ class Mailer < ActionMailer::Base
       subject: "#{count}[#{@app.name}][#{@notice.environment_name}] #{@notice.message.truncate(50)}"
   end
 
-  def comment_notification(comment)
+  def comment_notification
+    comment = params[:comment]
+
     @comment = comment
     @user = comment.user
-    @problem = ProblemDecorator.new comment.err
-    @notice = NoticeDecorator.new comment.err.notices.first
+    @problem = ProblemDecorator.new(comment.err)
+    @notice = NoticeDecorator.new(comment.err.notices.first)
     @app = @problem.app
 
     recipients = @comment.notification_recipients

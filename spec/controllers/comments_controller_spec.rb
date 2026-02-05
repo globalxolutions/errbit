@@ -3,21 +3,20 @@
 require "rails_helper"
 
 RSpec.describe CommentsController, type: :controller do
-  let(:app) { Fabricate(:app) }
-  let(:err) { Fabricate(:err, problem: Fabricate(:problem, app: app, environment: "production")) }
+  let(:app) { create(:app) }
 
   describe "POST /apps/:app_id/errs/:id/comments/create" do
     render_views
 
-    before(:each) do
-      sign_in Fabricate(:admin)
+    before do
+      sign_in create(:user, admin: true)
     end
 
     context "successful comment creation" do
-      let(:problem) { Fabricate(:problem) }
-      let(:user) { Fabricate(:user) }
+      let(:problem) { create(:problem) }
+      let(:user) { create(:user) }
 
-      before(:each) do
+      before do
         post :create, params: {
           app_id: problem.app.id,
           problem_id: problem.id,
@@ -42,15 +41,15 @@ RSpec.describe CommentsController, type: :controller do
   describe "DELETE /apps/:app_id/errs/:id/comments/:id/destroy" do
     render_views
 
-    before(:each) do
-      sign_in Fabricate(:admin)
+    before do
+      sign_in create(:user, admin: true)
     end
 
     context "successful comment deletion" do
-      let(:problem) { Fabricate(:problem_with_comments) }
+      let(:problem) { create(:problem_with_comments) }
       let(:comment) { problem.reload.comments.first }
 
-      before(:each) do
+      before do
         delete :destroy, params: {
           app_id: problem.app.id,
           problem_id: problem.id,
@@ -60,7 +59,7 @@ RSpec.describe CommentsController, type: :controller do
       end
 
       it "should delete the comment" do
-        expect(problem.comments.detect { |c| c.id.to_s == comment.id }).to be nil
+        expect(problem.comments.detect { |c| c.id.to_s == comment.id }).to eq(nil)
       end
 
       it "should redirect to problem page" do

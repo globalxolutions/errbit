@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 class AppDecorator < Draper::Decorator
-  decorates_association :watchers
   decorates_association :issue_tracker
   delegate_all
 
@@ -27,10 +26,6 @@ class AppDecorator < Draper::Decorator
 
   def notify_err_display
     object.notify_on_errs ? "" : "display: none;"
-  end
-
-  def custom_backtrace_url_template?
-    object.custom_backtrace_url_template.present?
   end
 
   def custom_backtrace_url(file, line)

@@ -5,14 +5,14 @@ require "rails_helper"
 RSpec.describe Api::V1::ProblemsController, type: :controller do
   context "when logged in" do
     before do
-      @user = Fabricate(:user)
+      @user = create(:user)
     end
 
     describe "GET /api/v1/problems/:id" do
       before do
-        notice = Fabricate(:notice)
-        err = Fabricate(:err, notices: [notice])
-        @problem = Fabricate(:problem, errs: [err])
+        notice = create(:notice)
+        err = create(:err, notices: [notice])
+        @problem = create(:problem, errs: [err])
       end
 
       it "should return JSON if JSON is requested" do
@@ -64,16 +64,16 @@ RSpec.describe Api::V1::ProblemsController, type: :controller do
       it "returns a 404 if the problem cannot be found" do
         get :show, params: {auth_token: @user.authentication_token, format: "json", id: "IdontExist"}
 
-        expect(response.status).to eq(404)
+        expect(response).to have_http_status(:not_found)
       end
     end
 
     describe "GET /api/v1/problems" do
       before do
-        Fabricate(:problem, first_notice_at: Date.new(2012, 8, 1), resolved_at: Date.new(2012, 8, 2))
-        Fabricate(:problem, first_notice_at: Date.new(2012, 8, 1), resolved_at: Date.new(2012, 8, 21))
-        Fabricate(:problem, first_notice_at: Date.new(2012, 8, 21))
-        Fabricate(:problem, first_notice_at: Date.new(2012, 8, 30))
+        create(:problem, first_notice_at: Date.new(2012, 8, 1), resolved_at: Date.new(2012, 8, 2))
+        create(:problem, first_notice_at: Date.new(2012, 8, 1), resolved_at: Date.new(2012, 8, 21))
+        create(:problem, first_notice_at: Date.new(2012, 8, 21))
+        create(:problem, first_notice_at: Date.new(2012, 8, 30))
       end
 
       it "should return JSON if JSON is requested" do
@@ -114,6 +114,20 @@ RSpec.describe Api::V1::ProblemsController, type: :controller do
         problems = JSON.parse(response.body)
 
         expect(problems.length).to eq(4)
+      end
+
+      it "should return problem objects with correct fields" do
+        get :index, params: {auth_token: @user.authentication_token, format: "json"}
+
+        problems = JSON.parse(response.body)
+        problem = problems.first
+
+        expect(problem).to be_a(Hash)
+        expect(problem.keys).to match_array([
+          "_id", "app_id", "app_name", "environment", "message", "where",
+          "first_notice_at", "last_notice_at", "resolved", "resolved_at",
+          "notices_count"
+        ])
       end
     end
   end

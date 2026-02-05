@@ -70,7 +70,7 @@ class ErrorReport
   end
 
   def retrieve_problem_was_resolved
-    @problem_was_resolved = Problem.where("_id" => @error.problem_id, :resolved => true).exists?
+    @problem_was_resolved = Problem.exists?("_id" => @error.problem_id, :resolved => true)
   end
 
   # Update problem cache with information about this notice
@@ -87,7 +87,8 @@ class ErrorReport
   # Send email notification if needed
   def email_notification
     return unless app.emailable? && should_email?
-    Mailer.err_notification(self).deliver_now
+
+    Mailer.with(error_report: self).err_notification.deliver_now
   rescue => e
     HoptoadNotifier.notify(e)
   end
@@ -101,6 +102,7 @@ class ErrorReport
   # Launch all notification define on the app associate to this notice
   def services_notification
     return unless app.notification_service_configured? && should_notify?
+
     app.notification_service.create_notification(problem)
   rescue => e
     HoptoadNotifier.notify(e)
@@ -129,6 +131,7 @@ class ErrorReport
     current_version = app.current_app_version
     return true if current_version.blank?
     return false if app_version.length <= 0
+
     Gem::Version.new(app_version) >= Gem::Version.new(current_version)
   end
 

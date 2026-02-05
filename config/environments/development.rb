@@ -17,19 +17,18 @@ Rails.application.configure do
   # Enable server timing.
   config.server_timing = true
 
-  # Enable/disable caching. By default caching is disabled.
-  # Run rails dev:cache to toggle caching.
+  # Enable/disable Action Controller caching. By default Action Controller caching is disabled.
+  # Run rails dev:cache to toggle Action Controller caching.
   if Rails.root.join("tmp/caching-dev.txt").exist?
     config.action_controller.perform_caching = true
     config.action_controller.enable_fragment_cache_logging = true
-
-    config.cache_store = :memory_store
-    config.public_file_server.headers = {"Cache-Control" => "public, max-age=#{2.days.to_i}"}
+    config.public_file_server.headers = {"cache-control" => "public, max-age=#{2.days.to_i}"}
   else
     config.action_controller.perform_caching = false
-
-    config.cache_store = :null_store
   end
+
+  # Change to :null_store to avoid any caching.
+  config.cache_store = :memory_store
 
   # Don't care if the mailer can't send.
   config.action_mailer.raise_delivery_errors = false
@@ -46,6 +45,9 @@ Rails.application.configure do
   # Highlight code that enqueued background job in logs.
   config.active_job.verbose_enqueue_logs = true
 
+  # Highlight code that triggered redirect in logs.
+  config.action_dispatch.verbose_redirect_logs = true
+
   # Raises error for missing translations.
   config.i18n.raise_on_missing_translations = true
 
@@ -61,6 +63,9 @@ Rails.application.configure do
   # Use an evented file watcher to asynchronously detect changes in source code,
   # routes, locales, etc. This feature depends on the listen gem.
   config.file_watcher = ActiveSupport::EventedFileUpdateChecker
+
+  # rails mail preview
+  config.action_mailer.preview_paths <<  `Rails.root}/spec/mailers/previews`
 
   # Known hosts
   # config.hosts << "localhost:3000"

@@ -3,15 +3,15 @@
 require "rails_helper"
 
 RSpec.describe ProblemRecacher do
-  let(:app) { Fabricate(:app) }
-  let(:backtrace) do
-    Fabricate(:backtrace)
-  end
+  let(:app) { create(:app) }
+
+  let(:backtrace) { create(:backtrace) }
 
   before do
     notices
 
     NoticeRefingerprinter.run
+
     described_class.run
   end
 
@@ -22,7 +22,7 @@ RSpec.describe ProblemRecacher do
         b = backtrace.clone
         b.lines[5][:number] = line_numbers.shift
         b.save!
-        notice = Fabricate(:notice, backtrace: b, app: app)
+        notice = create(:notice, backtrace: b, app: app)
         notice.save!
         notice
       end
@@ -30,6 +30,7 @@ RSpec.describe ProblemRecacher do
 
     it "has three problems for the five notices" do
       expect(Notice.count).to eq(5)
+
       expect(Problem.count).to eq(3)
     end
 

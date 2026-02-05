@@ -2,7 +2,7 @@
 
 require "rails_helper"
 
-RSpec.describe IssueTrackerDecorator, type: :decorator do
+RSpec.describe IssueTrackerTypeDecorator, type: :decorator do
   let(:fake_tracker_class) do
     klass = Class.new(ErrbitPlugin::IssueTracker) do
       def self.label
@@ -36,9 +36,9 @@ RSpec.describe IssueTrackerDecorator, type: :decorator do
   let(:fake_tracker) { IssueTrackerDecorator.new(fake_tracker_class.new) }
   let(:decorator) { IssueTrackerTypeDecorator.new(fake_tracker_class) }
 
-  describe "::note" do
+  describe ".note" do
     it "return the html_safe of Note" do
-      expect(decorator.note).to eql fake_tracker_class.note
+      expect(decorator.note).to eq(fake_tracker_class.note)
     end
   end
 
@@ -57,7 +57,7 @@ RSpec.describe IssueTrackerDecorator, type: :decorator do
       tracker = IssueTrackerDecorator.new(
         IssueTracker.new(type_tracker: "none")
       )
-      expect(decorator.params_class(tracker)).to eql "fake"
+      expect(decorator.params_class(tracker)).to eq("fake")
     end
 
     it "adds chosen class if type is same" do
@@ -68,7 +68,7 @@ RSpec.describe IssueTrackerDecorator, type: :decorator do
               type_tracker: "fake"
             ).decorate
           )
-      ).to eql "chosen fake"
+      ).to eq("chosen fake")
     end
   end
 end

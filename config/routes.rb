@@ -22,7 +22,7 @@ Rails.application.routes.draw do
 
   resources :site_config, only: :index do
     collection do
-      put :update
+      patch :update
     end
   end
 
@@ -49,15 +49,15 @@ Rails.application.routes.draw do
 
       member do
         get :xhr_sparkline
-        put :resolve
-        put :unresolve
+        patch :resolve
+        patch :unresolve
         post :create_issue
         post :close_issue
         delete :unlink_issue
       end
     end
 
-    resources :watchers, only: [:destroy, :update]
+    resource :watchers, only: [:create, :destroy]
 
     member do
       post :regenerate_api_key
@@ -92,5 +92,5 @@ Rails.application.routes.draw do
 
   match "/api/v3/projects/:project_id/notices" => "api/v3/notices#create", :via => [:post, :options]
 
-  root to: "apps#index"
+  root "apps#index"
 end

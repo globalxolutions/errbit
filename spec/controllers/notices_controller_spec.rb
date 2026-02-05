@@ -5,11 +5,11 @@ require "rails_helper"
 RSpec.describe NoticesController, type: :controller do
   it_requires_authentication for: {locate: :get}
 
-  let(:notice) { Fabricate(:notice) }
+  let(:notice) { create(:notice) }
 
   let(:xml) { Rails.root.join("spec/fixtures/hoptoad_test_notice.xml").read }
 
-  let(:app) { Fabricate(:app) }
+  let(:app) { create(:app) }
 
   let(:error_report) { double(valid?: true, generate_notice!: true, notice: notice, should_keep?: true) }
 
@@ -17,7 +17,7 @@ RSpec.describe NoticesController, type: :controller do
     context "with bogus xml" do
       it "returns an error" do
         post :create, body: "<r><b>notxml</r>", format: :xml
-        expect(response.status).to eq(422)
+        expect(response).to have_http_status(:unprocessable_content)
         expect(response.body).to eq("The provided XML was not well-formed")
       end
     end
@@ -61,7 +61,7 @@ RSpec.describe NoticesController, type: :controller do
 
         it "return 422" do
           post :create, params: {format: :xml, data: xml}
-          expect(response.status).to eq 422
+          expect(response).to have_http_status(:unprocessable_content)
         end
       end
     end
@@ -69,22 +69,23 @@ RSpec.describe NoticesController, type: :controller do
     context "without params needed" do
       it "return 400" do
         post :create, format: :xml
-        expect(response.status).to eq 400
-        expect(response.body).to eq "Need a data params in GET or raw post data"
+        expect(response).to have_http_status(:bad_request)
+        expect(response.body).to eq("Need a data params in GET or raw post data")
       end
     end
   end
 
   describe "GET /locate/:id" do
     context "when logged in as an admin" do
-      before(:each) do
-        @user = Fabricate(:admin)
+      before do
+        @user = create(:user, admin: true)
         sign_in @user
       end
 
       it "should locate notice and redirect to problem" do
-        problem = Fabricate(:problem, app: app, environment: "production")
-        notice = Fabricate(:notice, err: Fabricate(:err, problem: problem))
+        problem = create(:problem, app: app, environment: "production")
+        err = create(:err, problem: problem)
+        notice = create(:notice, err: err)
         get :locate, params: {id: notice.id}
         expect(response).to redirect_to(app_problem_path(problem.app, problem))
       end
@@ -93,14 +94,15 @@ RSpec.describe NoticesController, type: :controller do
 
   describe "GET /notices/:id" do
     context "when logged in as an admin" do
-      before(:each) do
-        @user = Fabricate(:admin)
+      before do
+        @user = create(:user, admin: true)
         sign_in @user
       end
 
       it "should locate notice and redirect to problem with notice_id" do
-        problem = Fabricate(:problem, app: app, environment: "production")
-        notice = Fabricate(:notice, err: Fabricate(:err, problem: problem))
+        problem = create(:problem, app: app, environment: "production")
+        err = create(:err, problem: problem)
+        notice = create(:notice, err: err)
         get :show_by_id, params: {id: notice.id}
         expect(response).to redirect_to(app_problem_path(problem.app, problem, notice_id: notice.id))
       end

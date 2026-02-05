@@ -3,10 +3,9 @@
 require "rails_helper"
 
 RSpec.describe NoticeRefingerprinter do
-  let(:app) { Fabricate(:app) }
-  let(:backtrace) do
-    Fabricate(:backtrace)
-  end
+  let(:app) { create(:app) }
+
+  let(:backtrace) { create(:backtrace) }
 
   before do
     notices
@@ -15,7 +14,7 @@ RSpec.describe NoticeRefingerprinter do
   context "identical backtraces" do
     let(:notices) do
       5.times.map do
-        notice = Fabricate(:notice, backtrace: backtrace, app: app)
+        notice = create(:notice, backtrace: backtrace, app: app)
         notice.save!
         notice
       end
@@ -23,6 +22,7 @@ RSpec.describe NoticeRefingerprinter do
 
     it "has only one err" do
       described_class.run
+
       expect(Err.count).to eq(1)
     end
   end
@@ -34,13 +34,14 @@ RSpec.describe NoticeRefingerprinter do
         b = backtrace.clone
         b.lines[5][:number] = line_numbers.shift
         b.save!
-        notice = Fabricate(:notice, backtrace: b, app: app)
+        notice = create(:notice, backtrace: b, app: app)
         notice.save!
       end
     end
 
     it "has three errs with default fingerprinter" do
       described_class.run
+
       expect(Err.count).to eq(3)
     end
 
@@ -50,6 +51,7 @@ RSpec.describe NoticeRefingerprinter do
       fingerprinter.save!
 
       described_class.run
+
       expect(Err.count).to eq(1)
     end
   end

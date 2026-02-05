@@ -33,9 +33,9 @@ RSpec.describe "Callback on Notice", type: :model do
 
   describe "email notifications (configured individually for each app)" do
     let(:notice_attrs) { notice_attrs_for.call(app.api_key) }
-    custom_thresholds = [2, 4, 8, 16, 32, 64]
+    let(:custom_thresholds) { [2, 4, 8, 16, 32, 64] }
     let(:app) do
-      Fabricate(:app_with_watcher, email_at_notices: custom_thresholds)
+      create(:app_with_watcher, email_at_notices: custom_thresholds)
     end
 
     before do
@@ -47,13 +47,17 @@ RSpec.describe "Callback on Notice", type: :model do
 
     after { Errbit::Config.per_app_email_at_notices = false }
 
-    custom_thresholds.each do |threshold|
-      it "sends an email notification after #{threshold} notice(s)" do
+    it "sends an email notification" do
+      custom_thresholds.each do |threshold|
         # set to just before the threshold
-        @problem.update_attributes notices_count: threshold - 1
+        @problem.update_attributes(notices_count: threshold - 1)
 
-        expect(Mailer).to receive(:err_notification)
-          .and_return(double("email", deliver_now: true))
+        expect(Mailer).to receive(:with) do
+          double.tap do |a|
+            expect(a).to receive(:err_notification)
+              .and_return(double("email", deliver_now: true))
+          end
+        end
 
         error_report = ErrorReport.new(notice_attrs)
         error_report.generate_notice!
@@ -61,29 +65,27 @@ RSpec.describe "Callback on Notice", type: :model do
     end
 
     it "doesn't email after 5 notices" do
-      @problem.update_attributes notices_count: 5
+      @problem.update_attributes(notices_count: 5)
 
-      expect(Mailer).not_to receive(:err_notification)
+      expect(Mailer).not_to receive(:with)
 
       error_report = ErrorReport.new(notice_attrs)
       error_report.generate_notice!
     end
 
     it "notify self if mailer fails" do
-      expect(Mailer).to receive(:err_notification).and_raise(ArgumentError)
+      expect(Mailer).to receive(:with).and_raise(ArgumentError)
       expect(HoptoadNotifier).to receive(:notify)
       ErrorReport.new(notice_attrs).generate_notice!
     end
   end
 
   describe "email notifications for resolved issues" do
-    let(:notification_service) { Fabricate(:campfire_notification_service) }
+    let(:notification_service) { create(:campfire_notification_service) }
     let(:app) do
-      Fabricate(
-        :app_with_watcher,
+      create(:app_with_watcher,
         notify_on_errs: true,
-        email_at_notices: [1, 100]
-      )
+        email_at_notices: [1, 100])
     end
     let(:notice_attrs) { notice_attrs_for.call(app.api_key) }
 
@@ -98,25 +100,30 @@ RSpec.describe "Callback on Notice", type: :model do
       err.problem.update_attributes notices_count: 99
       err.problem.resolve!
 
-      expect(Mailer).to receive(:err_notification)
-        .and_return(double("email", deliver_now: true))
+      expect(Mailer).to receive(:with) do
+        double.tap do |a|
+          expect(a).to receive(:err_notification)
+            .and_return(double("email", deliver_now: true))
+        end
+      end
 
       ErrorReport.new(notice_attrs).generate_notice!
     end
   end
 
   describe "send email when notification service is configured but fails" do
-    let(:notification_service) { Fabricate(:campfire_notification_service) }
+    let(:notification_service) { create(:campfire_notification_service) }
+
     let(:app) do
-      Fabricate(
-        :app_with_watcher,
+      create(:app_with_watcher,
         notify_on_errs: true,
-        notification_service: notification_service
-      )
+        notification_service: notification_service)
     end
+
     let(:notice_attrs) { notice_attrs_for.call(app.api_key) }
 
     before { Errbit::Config.per_app_notify_at_notices = true }
+
     after { Errbit::Config.per_app_notify_at_notices = false }
 
     it "sends email" do
@@ -124,17 +131,21 @@ RSpec.describe "Callback on Notice", type: :model do
 
       expect(error_report.app.notification_service)
         .to receive(:create_notification).and_raise(ArgumentError)
-      expect(Mailer)
-        .to receive(:err_notification).and_return(double(deliver_now: true))
+
+      expect(Mailer).to receive(:with) do
+        double.tap do |a|
+          expect(a).to receive(:err_notification)
+            .and_return(double(deliver_now: true))
+        end
+      end
 
       error_report.generate_notice!
     end
   end
 
-  describe "should not send a notification if a notification service is not" \
-           "configured" do
-    let(:notification_service) { Fabricate(:notification_service) }
-    let(:app) { Fabricate(:app, notification_service: notification_service) }
+  describe "should not send a notification if a notification service is not configured" do
+    let(:notification_service) { create(:notification_service) }
+    let(:app) { create(:app, notification_service: notification_service) }
     let(:notice_attrs) { notice_attrs_for.call(app.api_key) }
 
     before { Errbit::Config.per_app_notify_at_notices = true }
@@ -149,9 +160,9 @@ RSpec.describe "Callback on Notice", type: :model do
 
   describe "should send a notification at desired intervals" do
     let(:notification_service) do
-      Fabricate(:campfire_notification_service, notify_at_notices: [1, 2])
+      create(:campfire_notification_service, notify_at_notices: [1, 2])
     end
-    let(:app) { Fabricate(:app, notification_service: notification_service) }
+    let(:app) { create(:app, notification_service: notification_service) }
     let(:notice_attrs) { notice_attrs_for.call(app.api_key) }
 
     before { Errbit::Config.per_app_notify_at_notices = true }

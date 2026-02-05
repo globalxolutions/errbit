@@ -50,26 +50,30 @@ class User
     validates :username, presence: true
   end
 
-  def self.valid_google_domain?(email)
-    return true if Errbit::Config.google_authorized_domains.nil?
-    match_data = /.+@(?<domain>.+)$/.match(email)
-    return false if match_data.nil?
-    Errbit::Config.google_authorized_domains.split(",").include?(match_data[:domain])
-  end
+  class << self
+    # @param email [String]
+    def valid_google_domain?(email)
+      return true if Errbit::Config.google_authorized_domains.blank?
 
-  def self.create_from_google_oauth2(access_token)
-    email = access_token.dig(:info, :email)
-    name = access_token.dig(:info, :name)
-    uid = access_token[:uid]
+      match_data = /.+@(?<domain>.+)$/.match(email)
+      return false if match_data.nil?
 
-    user = User.where(email: email).first
+      Errbit::Config.google_authorized_domains.split(",").include?(match_data[:domain])
+    end
 
-    user ||= User.create(name: name,
-      email: email,
-      google_uid: uid,
-      password: Devise.friendly_token[0, 20])
+    # @param access_token [String]
+    def create_from_google_oauth2(access_token) # rubocop:disable Naming/VariableNumber
+      email = access_token.dig(:info, :email)
+      name = access_token.dig(:info, :name)
+      uid = access_token[:uid]
 
-    user
+      user = User.where(email: email).first
+
+      user || User.create(name: name,
+        email: email,
+        google_uid: uid,
+        password: Devise.friendly_token[0, 20])
+    end
   end
 
   def per_page
@@ -117,6 +121,7 @@ class User
 
     self.class.validators_on(:password).map { |v| v.validate_each(self, :password, password) }
     return false if errors.any?
+
     save(validate: false)
   end
 
