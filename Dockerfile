@@ -1,6 +1,6 @@
 # syntax = docker/dockerfile:1
 
-FROM registry.docker.com/library/ruby:4.0.1-slim@sha256:24c036360fe9dceaf4a7d4247848c0570843b79eea19cc998da3627e5343dc60 AS base
+FROM registry.docker.com/library/ruby:4.0.1-slim@sha256:3d6c065cb1c8815ed46c9a27cc758f9a540a73671866aa5980a60c93cac2efc0 AS base
 
 # Rails app lives here
 WORKDIR /rails
@@ -24,8 +24,8 @@ ENV RAILS_ENV="production" \
     BOOTSNAP_READONLY="true"
 
 RUN set -eux ; \
-    gem update --system "4.0.4" ; \
-    gem install bundler --version "4.0.4" --force
+    gem update --system "4.0.6" ; \
+    gem install bundler --version "4.0.6" --force
 
 # Throw-away build stage to reduce size of final image
 FROM base AS build
